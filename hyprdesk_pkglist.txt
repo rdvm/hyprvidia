@@ -1,7 +1,6 @@
 base
 base-devel
 bind
-btop
 cifs-utils
 dunst
 firefox
@@ -28,7 +27,6 @@ nvidia-settings
 openssh
 pavucontrol
 pipewire
-pipewire-alsa
 pipewire-jack
 pipewire-pulse
 polkit-gnome
