@@ -44,7 +44,7 @@ rm -rf yay #this is just to remove the yay repo now that it's installed
 * Clone this repo to get a couple of package lists that can be used to bulk install
 
 ```bash
-git clone https://github.com/rdvm/hyprvida
+git clone https://github.com/rdvm/hyprvida.git
 ```
 
 * The `hyprdesk_pkglist.txt` file contains a bunch of useful and necessary packages that can all be installed like this:
