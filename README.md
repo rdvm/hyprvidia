@@ -4,7 +4,7 @@ A repo with some resources for setting up Hyprland WM on a system with Nvidia
 ## Arch minimal install with archinstaller
 
 * Grab the Arch ISO from [teh internet](https://geo.mirror.pkgbuild.com/iso/2023.06.01/) and load it onto a bootable USB
-* Connect to WiFi using `iwd` if you don' that have a wired connection (#iwd)
+* Connect to WiFi using `iwd` if you don' that have a wired connection ([see iwd section](#iwd)
 * Run `archinstall`
 * Refer to the [official documentation](https://python-archinstall.readthedocs.io/en/latest/installing/guided.html#description-individual-steps) for recommendations
 * Here are my recommendations:
@@ -55,6 +55,80 @@ sudo pacman -S --needed - < hyprvidia/hyprdesk_pkglist.txt
 
 * There is also a `hyprdesk_pkglist_aur.txt` that has AUR packages, but I've found that piping a text file to `yay` doesn't really work too well so you may want to just `cat` out the file to read the packages and type them into a `yay -S ...` command
 
+### Nvidia shenanigans
+
+You can refer to the [Nvidia section of the Hyprland Wiki](https://wiki.hyprland.org/Nvidia/), but here are some consolidated notes from my experience.
+
+#### Bootloader stuff
+
+* Install `nvidia-dkms` (*if you installed the whole `pkglist.txt` earler you already have it*)
+
+If you're using grub as your bootloader skip systemd-boot section and go to [Grub](#grub)
+
+##### systemd-boot
+
+* Add `nvidia_drm.modeset=1` to the end of the file `/boot/loader/entries/arch.conf` (*For me the file was empty or maybe even non-existent so I had to create it. That line is the only thing in mine as of today*)
+
+[/boot/loader/entries/arch.conf]
+```
+nvidia_drm.modeset=1
+```
+
+##### Grub
+
+* Add `nvidia_drm.modeset=1` to the end of `GRUB_CMDLINE_LINUX_DEFAULT=` in the file `/etc/default/grub`
+* Run `grub-mkconfig -o /boot/grub/grub.cfg`
+
+### Mkinitcpio
+
+* Add `nvidia nvidia_modeset nvidia_uvm nvidia_drm` to the `MODULES` in `/etc/mkinitcpio.conf`
+
+[/etc/mkinitcpio.conf]
+```
+MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
+BINARIES=()
+FILES=()
+HOOKS=(base systemd autodetect keyboard sd-vconsole modconf block filesystems fsck)
+```
+
+* Run the following command, making sure you have `linux-headers` installed first (*if you installed the whole `pkglist.txt` earlier you already have it*)
+
+```
+mkinitcpio --config /etc/mkinitcpio.conf --generate /boot/initramfs-custom.img
+```
+
+* Add `options nvidia-drm modeset=1` to `/etc/modprobe.d/nvidia.conf` (*You may need to create this file. I did, and this line is the only thing in it.
+
+[/etc/modprobe.d/nvidia.conf]
+```
+options nvidia-drm modeset=1
+```
+
+* Install `qt5-wayland`, `qt5ct` and `libva` (*if you installed the whole `pkglist.txt` earlier you already have these*)
+
+### Hyprland config environment variables
+
+There are some variables you'll want to include in your `hyprland.conf`, but you may not have one yet if you haven't written your own/imported any personal dotfiles. The default `hyprland.conf` won't show up until the first boot after the `hyprland` package has been installed. At any rate, you'll want/need to have these in your configuration file at whatever point you have one:
+
+```conf
+env = LIBVA_DRIVER_NAME,nvidia
+env = XDG_SESSION_TYPE,wayland
+env = GBM_BACKEND,nvidia-drm
+env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+env = WLR_NO_HARDWARE_CURSORS,1
+```
+
+### If you get a "loop" on the login screen
+
+I think this might have as much to do with the specific CPU as it does with anything having to do with Nvidia, but I was getting a weird behavior initially. On the SDDM login screen I'd enter my password, it would seem to be accepted, the screen would go black for a second or two, and then return me to the login screen. I also could not switch to another `TTY` to do anything, so I had to boot from the installation USB again, chroot into my install, and then added this `block-i915.conf` file to `/etc/modprobe.d`
+
+[/etc/modprobe.d/block-i915.conf]
+```
+blacklist i915
+
+install i915 /usr/bin/false
+install intel_agp /usr/bin/false
+```
 
 ### iwd
 
